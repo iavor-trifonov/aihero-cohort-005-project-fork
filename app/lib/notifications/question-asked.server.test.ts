@@ -79,7 +79,7 @@ describe("question-asked", () => {
 
     if (!notification) throw new Error("Expected a Notification");
     expect(textOf(notification)).toBe(
-      "**Sam Student** asked a question on **Hello World** in **Test Course**"
+      "**Sam Student** asked a question on **Hello World** in **Test Course**."
     );
   });
 

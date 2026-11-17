@@ -84,7 +84,7 @@ describe("comment-replied", () => {
 
     if (!notification) throw new Error("Expected a Notification");
     expect(textOf(notification)).toBe(
-      "**Sam Student** replied to your comment on **Hello World**"
+      "**Sam Student** replied to your comment on **Hello World**."
     );
   });
 

@@ -31,6 +31,12 @@ type Renderer<T extends NotificationType> = (
 const bold = (text: string): TextPart => ({ text, bold: true });
 const plain = (text: string): TextPart => ({ text, bold: false });
 
+const STATUS_CHANGES: Record<CourseStatus, string> = {
+  [CourseStatus.Published]: " was published.",
+  [CourseStatus.Archived]: " was archived.",
+  [CourseStatus.Draft]: " was moved back to draft.",
+};
+
 // One entry per type, each in its own slot separated by blank lines.
 const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
   "refund-request-raised": (data) => ({
@@ -61,6 +67,7 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
       bold(data.replierName),
       plain(" replied to your comment on "),
       bold(data.lessonTitle),
+      plain("."),
     ],
   }),
 
@@ -72,6 +79,7 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
       bold(data.lessonTitle),
       plain(" in "),
       bold(data.courseTitle),
+      plain("."),
     ],
   }),
 
@@ -89,13 +97,7 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
     icon: BookOpen,
     parts: [
       bold(data.courseTitle),
-      plain(
-        data.status === CourseStatus.Published
-          ? " was published."
-          : data.status === CourseStatus.Archived
-            ? " was archived."
-            : " was moved back to draft."
-      ),
+      plain(STATUS_CHANGES[data.status]),
     ],
   }),
 };
