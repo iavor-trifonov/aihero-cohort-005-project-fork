@@ -10,7 +10,7 @@ Cadence sends in-app Notifications through Knock, a closed-source hosted service
 
 ## Consequences
 
-- Production must use Knock's enhanced security: our server signs a token for each user, because without it anyone with a feed id can read that feed.
+- Every Knock call goes from our server with the secret key, and the browser never calls Knock, so v1 signs no user tokens. Enhanced security only gates requests made with the public key, but it is still switched on in Production, because without it anyone holding the public key and a user id can read that feed. Live updates in the browser would need signed user tokens.
 - A Knock user id can't be changed after it's created, and the feed history lives in Knock. Moving to another vendor means losing or migrating that history.
 - Knock has no offline mode. Following the mailer pattern, a fake transport records Notifications locally when no Knock key is set.
 - Above 10k messages a month the next plan costs $250/mo. Check production volume against that limit.
