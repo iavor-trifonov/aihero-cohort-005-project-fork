@@ -1,3 +1,4 @@
+import type { CourseStatus } from "~/db/schema";
 import type { PurchaseKind } from "~/lib/refunds.server";
 
 // ─── Notifications ───
@@ -37,7 +38,11 @@ export interface NotificationDataMap {
     url: string;
   };
 
-  // "course-status-changed": #25
+  "course-status-changed": {
+    courseTitle: string;
+    status: CourseStatus;
+    url: string;
+  };
 }
 
 export type NotificationType = keyof NotificationDataMap;

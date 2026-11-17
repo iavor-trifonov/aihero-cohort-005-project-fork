@@ -15,6 +15,8 @@ import {
   users,
 } from "~/db/schema";
 import { db } from "~/db";
+import { buildCourseStatusChanged } from "~/lib/notifications/course-status-changed.server";
+import { getNotificationFeed } from "~/lib/notifications/feed.server";
 import { eq, or, sql } from "drizzle-orm";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
@@ -139,7 +141,27 @@ export async function action({ request }: Route.ActionArgs) {
   const { intent } = parsed.data;
 
   if (intent === "update-status") {
+    const before = db
+      .select({ status: courses.status })
+      .from(courses)
+      .where(eq(courses.id, parsed.data.courseId))
+      .get();
     updateCourseStatus(parsed.data.courseId, parsed.data.status);
+
+    // After the update has committed. notify() never throws, so the status
+    // change stands whatever happens to the Notification.
+    const notification =
+      before &&
+      buildCourseStatusChanged(
+        db,
+        parsed.data.courseId,
+        before.status,
+        currentUserId
+      );
+    if (notification) {
+      await getNotificationFeed().notify(notification);
+    }
+
     return { success: true };
   }
 
