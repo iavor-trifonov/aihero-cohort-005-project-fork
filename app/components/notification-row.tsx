@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Link, useFetcher, useNavigate } from "react-router";
 import { Check, Circle } from "lucide-react";
+import type { FeedActionResult } from "~/lib/notifications/feed-actions.server";
 import type { FeedItem } from "~/lib/notifications/notification";
 import { renderNotification } from "~/lib/notifications/render";
 import { relativeTime } from "~/lib/notifications/feed-view";
@@ -12,7 +13,8 @@ import { cn } from "~/lib/utils";
 
 export const NOTIFICATIONS_ACTION = "/notifications";
 
-export type MarkResult = { ok: true } | { error: string };
+/** What the /notifications action answers a mark with. */
+export type MarkResult = FeedActionResult;
 
 /** The fetcher key for a row's marks, so the page can see them in flight. */
 export function rowFetcherKey(itemId: string) {
@@ -57,23 +59,31 @@ export function NotificationRow({
   const fetcher = useFetcher<MarkResult>({ key: rowFetcherKey(item.id) });
   const navigate = useNavigate();
   const asked = useRef(item.read);
+  const openWhenMarked = useRef(false);
 
-  useOnSettled(fetcher, (result) => onMarked(item.id, asked.current, result));
+  useOnSettled(fetcher, (result) => {
+    const open = openWhenMarked.current;
+    openWhenMarked.current = false;
+    onMarked(item.id, asked.current, result);
+    // Only go once the read is saved; on failure the page shows the error
+    // and the row stays as it was.
+    if (open && result.ok) navigate(url);
+  });
 
   function mark(read: boolean) {
     asked.current = read;
-    return fetcher.submit(
+    fetcher.submit(
       { intent: read ? "mark-read" : "mark-unread", itemId: item.id },
       { method: "post", action: NOTIFICATIONS_ACTION }
     );
   }
 
-  async function openAndMarkRead(event: React.MouseEvent<HTMLAnchorElement>) {
+  function openAndMarkRead(event: React.MouseEvent<HTMLAnchorElement>) {
     // Leave new-tab clicks alone; they just follow the link.
     if (item.read || event.metaKey || event.ctrlKey || event.shiftKey) return;
     event.preventDefault();
-    await mark(true);
-    navigate(url);
+    openWhenMarked.current = true;
+    mark(true);
   }
 
   return (
@@ -109,7 +119,10 @@ export function NotificationRow({
       </time>
       <button
         type="button"
-        onClick={() => mark(!item.read)}
+        onClick={() => {
+          openWhenMarked.current = false;
+          mark(!item.read);
+        }}
         title={item.read ? "Mark as unread" : "Mark as read"}
         aria-label={item.read ? "Mark as unread" : "Mark as read"}
         className="rounded p-1 text-muted-foreground opacity-0 hover:bg-accent focus-visible:opacity-100 group-hover:opacity-100"
