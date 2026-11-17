@@ -1,4 +1,4 @@
-import { Receipt, type LucideIcon } from "lucide-react";
+import { Receipt, Ticket, type LucideIcon } from "lucide-react";
 import { BadgeCheck, BadgeX } from "lucide-react";
 import type { NotificationDataMap, NotificationType } from "./notification";
 
@@ -50,7 +50,15 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
 
   // "question-asked": #23
 
-  // "seat-claimed": #24
+  "seat-claimed": (data) => ({
+    icon: Ticket,
+    parts: [
+      bold(data.studentName),
+      plain(" claimed a Seat on "),
+      bold(data.courseTitle),
+      plain(`. ${data.seatsLeft} of ${data.seatsTotal} Seats left.`),
+    ],
+  }),
 
   // "course-status-changed": #25
 };
