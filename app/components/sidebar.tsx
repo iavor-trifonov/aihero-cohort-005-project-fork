@@ -52,6 +52,8 @@ interface NavItem {
   to: string;
   icon: React.ReactNode;
   roles: UserRole[] | "all";
+  /** A count shown next to the label, from the Sidebar's props. */
+  badge?: "unread";
 }
 
 const navItems: NavItem[] = [
@@ -60,6 +62,7 @@ const navItems: NavItem[] = [
     to: "/notifications",
     icon: <Bell className="size-4" />,
     roles: [UserRole.Student, UserRole.Instructor, UserRole.Admin],
+    badge: "unread",
   },
   {
     label: "Browse Courses",
@@ -117,8 +120,8 @@ const navItems: NavItem[] = [
   },
 ];
 
-function UnreadBadge({ count }: { count: number | null }) {
-  const label = count === null ? null : unreadBadgeLabel(count);
+function UnreadBadge({ count }: { count: number | null | undefined }) {
+  const label = count == null ? null : unreadBadgeLabel(count);
   if (!label) return null;
   return (
     <span
@@ -143,6 +146,9 @@ export function Sidebar({
   unreadCount,
 }: SidebarProps) {
   const currentUserRole = currentUser?.role ?? null;
+  const badges: Record<NonNullable<NavItem["badge"]>, typeof unreadCount> = {
+    unread: unreadCount,
+  };
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -184,9 +190,9 @@ export function Sidebar({
             >
               {item.icon}
               {item.label}
-              {item.to === "/notifications" && unreadCount && (
+              {item.badge && badges[item.badge] && (
                 <Suspense fallback={null}>
-                  <Await resolve={unreadCount} errorElement={null}>
+                  <Await resolve={badges[item.badge]} errorElement={null}>
                     {(count) => <UnreadBadge count={count} />}
                   </Await>
                 </Suspense>
