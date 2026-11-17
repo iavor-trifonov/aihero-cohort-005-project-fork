@@ -87,7 +87,7 @@ describe("applyFeedAction", () => {
   });
 
   it("rejects an unknown intent or a missing item, changing nothing", async () => {
-    for (const fields of [
+    for (const fields of <Record<string, string>[]>[
       { intent: "delete", itemId: "x" },
       { intent: "mark-read" },
       { intent: "mark-unread", itemId: "" },
