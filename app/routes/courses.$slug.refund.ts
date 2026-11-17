@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { parseFormData, parseParams } from "~/lib/validation";
 import { raiseRefundRequest } from "~/lib/refunds.server";
 import { sendEmail } from "~/lib/mailer.server";
+import { getNotificationFeed } from "~/lib/notifications/feed.server";
 
 const refundParamsSchema = z.object({
   slug: z.string().min(1),
@@ -73,6 +74,11 @@ export async function action({ params, request }: Route.ActionArgs) {
   }
 
   await sendEmail(result.email);
+  // After the write has committed. notify() never throws, so the Refund
+  // Request stands whatever happens to the Notification.
+  if (result.notification) {
+    await getNotificationFeed().notify(result.notification);
+  }
 
   return redirect(result.kind === "team_licence" ? "/team" : "/settings");
 }

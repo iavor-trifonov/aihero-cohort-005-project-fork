@@ -139,3 +139,14 @@ export function fileFeed(path: string): NotificationFeed {
     },
   });
 }
+
+// ─── Choosing the feed ───
+
+/** Where local dev keeps its feeds. Gitignored; `npm run db:seed` deletes it. */
+export const DEV_FEED_PATH = ".notifications.json";
+
+/** The feed for this environment. */
+export function getNotificationFeed(): NotificationFeed {
+  // #26: use the Knock-backed feed when KNOCK_API_KEY is set.
+  return fileFeed(DEV_FEED_PATH);
+}

@@ -1,3 +1,6 @@
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, it, expect, beforeEach } from "vitest";
 import { and, eq } from "drizzle-orm";
 import { createTestDb, seedBaseData } from "~/test/setup";
@@ -14,6 +17,7 @@ import {
   listTeamLicences,
   raiseRefundRequest,
 } from "./refunds.server";
+import { fileFeed } from "./notifications/feed.server";
 
 type TestDb = ReturnType<typeof createTestDb>;
 
@@ -163,7 +167,50 @@ describe("raising a Refund Request", () => {
 
     const result = raiseRefundRequest(db, purchase.id, base.user.id, "Nope.", NOW);
 
-    expect(result).toMatchObject({ ok: true, kind: "individual_purchase" });
+    expect(result).toMatchObject({
+      ok: true,
+      kind: "individual_purchase",
+      notification: {
+        type: "refund-request-raised",
+        recipients: [{ id: String(platformAdmin.id), name: "Pat Admin" }],
+        actorId: String(base.user.id),
+        data: { courseTitle: "Test Course", url: "/admin/refunds" },
+      },
+    });
+  });
+
+  it("tells the Platform Admins about a Team Licence's Refund Request", () => {
+    const teamAdmin = addLearner("Priya");
+    const { purchase } = buySeats(teamAdmin.id, 3);
+
+    const result = raiseRefundRequest(db, purchase.id, teamAdmin.id, "Nope.", NOW);
+
+    expect(result).toMatchObject({
+      ok: true,
+      kind: "team_licence",
+      notification: {
+        recipients: [{ id: String(platformAdmin.id) }],
+        actorId: String(teamAdmin.id),
+        data: { buyerName: "Priya", purchaseKind: "team_licence" },
+      },
+    });
+  });
+
+  it("doesn't notify a Platform Admin about their own Refund Request", async () => {
+    const otherAdmin = db
+      .insert(schema.users)
+      .values({ name: "Quinn Admin", email: "quinn@example.com", role: UserRole.Admin })
+      .returning()
+      .get();
+    const purchase = buyForSelf(platformAdmin.id);
+    const feed = fileFeed(join(mkdtempSync(join(tmpdir(), "feed-")), "feed.json"));
+
+    const result = raiseRefundRequest(db, purchase.id, platformAdmin.id, "Nope.", NOW);
+    if (!result.ok || !result.notification) throw new Error("Expected a Notification");
+    await feed.notify(result.notification);
+
+    expect(await feed.unreadCount(String(platformAdmin.id))).toBe(0);
+    expect(await feed.unreadCount(String(otherAdmin.id))).toBe(1);
   });
 
   it("refuses anyone but the buyer", () => {

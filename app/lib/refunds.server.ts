@@ -23,6 +23,8 @@ import {
   REFUND_WINDOW_DAYS,
   type RuleBreak,
 } from "~/lib/refund-rules";
+import type { Notification } from "~/lib/notifications/notification";
+import { buildRefundRequestRaised } from "~/lib/notifications/refund-request-raised.server";
 
 // ─── Refunds ───
 // Everything about Refund Requests: whether a Purchase may be refunded, raising
@@ -351,7 +353,14 @@ export function getRefundOffer(
 export type Email = { to: string; subject: string; body: string };
 
 export type RaiseResult =
-  | { ok: true; refundRequestId: number; kind: PurchaseKind; email: Email }
+  | {
+      ok: true;
+      refundRequestId: number;
+      kind: PurchaseKind;
+      email: Email;
+      /** For every Platform Admin. Send it once this has returned. */
+      notification: Notification | null;
+    }
   | Failure;
 
 export function raiseRefundRequest(
@@ -391,6 +400,7 @@ export function raiseRefundRequest(
     ok: true,
     refundRequestId: refundRequest.id,
     kind: kindOf(getSeats(db, purchase.id)),
+    notification: buildRefundRequestRaised(db, purchase.id, buyerId),
     email: {
       to: buyer.email,
       subject: `Refund requested — ${course.title}`,
