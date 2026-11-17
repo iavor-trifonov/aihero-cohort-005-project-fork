@@ -26,9 +26,18 @@ export interface NotificationDataMap {
 
   // "refund-request-decided": #22
 
-  // "comment-replied": #23
+  "comment-replied": {
+    replierName: string;
+    lessonTitle: string;
+    url: string;
+  };
 
-  // "question-asked": #23
+  "question-asked": {
+    studentName: string;
+    lessonTitle: string;
+    courseTitle: string;
+    url: string;
+  };
 
   "seat-claimed": {
     studentName: string;
