@@ -7,6 +7,8 @@ import { getCurrentUserId } from "~/lib/session";
 import { resolveCountry } from "~/lib/country.server";
 import { parseParams, parseFormData } from "~/lib/validation";
 import { getSeatAvailability } from "~/lib/refunds.server";
+import { getNotificationFeed } from "~/lib/notifications/feed.server";
+import { buildSeatClaimed } from "~/lib/notifications/seat-claimed.server";
 import { Card, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Ticket, AlertCircle, CheckCircle2, Globe } from "lucide-react";
@@ -41,7 +43,7 @@ const SEAT_REFUNDED =
   "This seat is no longer available. Ask the person who shared it with you.";
 
 type RedeemResult =
-  | { ok: true; enrollment: typeof enrollments.$inferSelect }
+  | { ok: true; seatId: number; enrollment: typeof enrollments.$inferSelect }
   | { ok: false; error: string };
 
 function redeemCoupon(
@@ -109,7 +111,7 @@ function redeemCoupon(
     .returning()
     .get();
 
-  return { ok: true, enrollment };
+  return { ok: true, seatId: coupon.id, enrollment };
 }
 
 const redeemParamsSchema = z.object({
@@ -202,6 +204,13 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   if (!result.ok) {
     return data({ error: result.error }, { status: 400 });
+  }
+
+  // After the claim has been written. notify() never throws, so the Seat
+  // stays claimed whatever happens to the Notification.
+  const notification = buildSeatClaimed(db, result.seatId, currentUserId);
+  if (notification) {
+    await getNotificationFeed().notify(notification);
   }
 
   const course = getCourseById(result.enrollment.courseId);

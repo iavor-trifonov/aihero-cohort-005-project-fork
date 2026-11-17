@@ -15,6 +15,8 @@ import { cn, daysSince, formatRelativeTime } from "~/lib/utils";
 import { MIN_COMMENT_LENGTH, MAX_COMMENT_LENGTH } from "~/lib/comments";
 import { parseFormData } from "~/lib/validation";
 import { db } from "~/db";
+import { getNotificationFeed } from "~/lib/notifications/feed.server";
+import { buildCommentReplied } from "~/lib/notifications/comment-replied.server";
 import {
   comments,
   courses,
@@ -207,8 +209,9 @@ export async function action({ request }: Route.ActionArgs) {
   // instructor, or an admin.
   const access = await requireStaff(request, course.courseId);
 
+  let reply;
   try {
-    createComment(
+    reply = createComment(
       access.userId!,
       question.lessonId,
       question.id,
@@ -219,6 +222,13 @@ export async function action({ request }: Route.ActionArgs) {
       return { ok: false, error: error.message };
     }
     throw error;
+  }
+
+  // After the insert has committed. notify() never throws, so the reply
+  // stands whatever happens to the Notification.
+  const notification = buildCommentReplied(db, reply.id);
+  if (notification) {
+    await getNotificationFeed().notify(notification);
   }
 
   return { ok: true };

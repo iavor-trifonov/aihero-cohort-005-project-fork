@@ -1,3 +1,4 @@
+import type { CourseStatus } from "~/db/schema";
 import type { PurchaseKind } from "~/lib/refunds.server";
 
 // ─── Notifications ───
@@ -23,15 +24,39 @@ export interface NotificationDataMap {
     url: string;
   };
 
-  // "refund-request-decided": #22
+  "refund-request-decided": {
+    courseTitle: string;
+    decision: "approved" | "declined";
+    purchaseKind: PurchaseKind;
+    url: string;
+  };
 
-  // "comment-replied": #23
+  "comment-replied": {
+    replierName: string;
+    lessonTitle: string;
+    url: string;
+  };
 
-  // "question-asked": #23
+  "question-asked": {
+    studentName: string;
+    lessonTitle: string;
+    courseTitle: string;
+    url: string;
+  };
 
-  // "seat-claimed": #24
+  "seat-claimed": {
+    studentName: string;
+    courseTitle: string;
+    seatsLeft: number;
+    seatsTotal: number;
+    url: string;
+  };
 
-  // "course-status-changed": #25
+  "course-status-changed": {
+    courseTitle: string;
+    status: CourseStatus;
+    url: string;
+  };
 }
 
 export type NotificationType = keyof NotificationDataMap;

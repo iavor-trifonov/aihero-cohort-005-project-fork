@@ -414,6 +414,38 @@ describe("approving a Refund Request", () => {
     expect(result.email.subject).toBe("Refund approved — Test Course");
     expect(result.email.body).toContain("$79.00");
   });
+
+  it("tells the buyer in-app that it was approved", async () => {
+    const purchase = buyForSelf(base.user.id);
+    const id = raise(purchase.id, base.user.id);
+    const feed = fileFeed(join(mkdtempSync(join(tmpdir(), "feed-")), "feed.json"));
+
+    const result = approveRefundRequest(db, id, platformAdmin.id, "Sorted.", NOW);
+
+    expect(result).toMatchObject({
+      ok: true,
+      notification: {
+        type: "refund-request-decided",
+        recipients: [{ id: String(base.user.id), name: "Test User" }],
+        actorId: String(platformAdmin.id),
+        data: { decision: "approved", url: `/courses/${base.course.slug}` },
+      },
+    });
+    if (!result.ok || !result.notification) throw new Error("Expected a Notification");
+    await feed.notify(result.notification);
+    expect(await feed.unreadCount(String(base.user.id))).toBe(1);
+  });
+
+  it("returns no Notification when the approval is refused", () => {
+    const priya = addLearner("Priya");
+    const { purchase, seats } = buySeats(priya.id, 2);
+    const id = raise(purchase.id, priya.id);
+    claimSeat(seats[0].id, addLearner("Ben").id);
+
+    expect(approveRefundRequest(db, id, platformAdmin.id, null, NOW)).not.toHaveProperty(
+      "notification"
+    );
+  });
 });
 
 describe("declining a Refund Request", () => {
@@ -454,6 +486,27 @@ describe("declining a Refund Request", () => {
     declineRefundRequest(db, id, platformAdmin.id, "Seats are in use.", NOW);
 
     expect(getSeatAvailability(db, getSeat(seats[0].id))).toBe("available");
+  });
+
+  it("tells the Team Admin in-app that it was declined, without the note", () => {
+    const priya = addLearner("Priya");
+    const { purchase } = buySeats(priya.id, 1);
+    const id = raise(purchase.id, priya.id);
+
+    const result = declineRefundRequest(db, id, platformAdmin.id, "Seats are in use.", NOW);
+
+    expect(result).toMatchObject({
+      ok: true,
+      notification: {
+        type: "refund-request-decided",
+        recipients: [{ id: String(priya.id), name: "Priya" }],
+        actorId: String(platformAdmin.id),
+        data: { decision: "declined", purchaseKind: "team_licence", url: "/team" },
+      },
+    });
+    expect(JSON.stringify(result.ok && result.notification)).not.toContain(
+      "Seats are in use."
+    );
   });
 });
 
