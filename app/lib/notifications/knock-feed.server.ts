@@ -50,6 +50,15 @@ export function knockFeed(
     return channelId;
   }
 
+  async function requireOwnMessage(userId: string, itemId: string) {
+    // A user recipient is referenced by its id alone; an object reference is
+    // never a person's feed.
+    const { recipient } = await client.messages.get(itemId);
+    if (recipient !== userId) {
+      throw new Error(`Message ${itemId} was not sent to user ${userId}`);
+    }
+  }
+
   return createFeed({
     // The workflow key is the Notification type. Recipients are identified
     // inline as `{ id, name }`, so Knock creates or updates them. The actor
@@ -79,13 +88,15 @@ export function knockFeed(
       return body.meta.unread_count;
     },
 
-    // A Knock message id already belongs to one recipient, so the user id
-    // isn't needed to mark it.
-    async markRead(_userId, itemId) {
+    // The secret key can mark anyone's message, so check it was sent to this
+    // user first: nobody marks someone else's Notification by its id.
+    async markRead(userId, itemId) {
+      await requireOwnMessage(userId, itemId);
       await client.messages.markAsRead(itemId);
     },
 
-    async markUnread(_userId, itemId) {
+    async markUnread(userId, itemId) {
+      await requireOwnMessage(userId, itemId);
       await client.messages.markAsUnread(itemId);
     },
 

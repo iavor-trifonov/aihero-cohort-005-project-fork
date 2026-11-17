@@ -196,17 +196,37 @@ describe("knockFeed", () => {
     );
   });
 
-  it("marks one item read or unread by its message id", async () => {
-    const { client, requests } = fakeKnock(() => ({}));
+  /** Answers a message lookup as a message sent to `recipient`. */
+  function messageFor(recipient: string) {
+    return (request: Request) =>
+      request.method === "GET"
+        ? { id: "msg_1", channel_id: CHANNEL, recipient }
+        : {};
+  }
+
+  it("marks one of the user's items read or unread by its message id", async () => {
+    const { client, requests } = fakeKnock(messageFor("42"));
     const feed = knockFeed(client, CHANNEL);
 
     await feed.markRead("42", "msg_1");
     await feed.markUnread("42", "msg_1");
 
     expect(requests.map(({ method, path }) => `${method} ${path}`)).toEqual([
+      "GET /v1/messages/msg_1",
       "PUT /v1/messages/msg_1/read",
+      "GET /v1/messages/msg_1",
       "DELETE /v1/messages/msg_1/read",
     ]);
+  });
+
+  it("refuses to mark an item that was sent to someone else", async () => {
+    const { client, requests } = fakeKnock(messageFor("7"));
+    const feed = knockFeed(client, CHANNEL);
+
+    await expect(feed.markRead("42", "msg_1")).rejects.toThrow();
+    await expect(feed.markUnread("42", "msg_1")).rejects.toThrow();
+
+    expect(requests.map(({ method }) => method)).toEqual(["GET", "GET"]);
   });
 
   it("marks everything read in the user's feed channel", async () => {
