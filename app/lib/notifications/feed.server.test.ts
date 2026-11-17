@@ -78,6 +78,12 @@ describe("fileFeed", () => {
     expect(await feed.unreadCount(ALICE.id)).toBe(0);
   });
 
+  it("sends nothing when a builder had nothing to send", async () => {
+    await expect(feed.notify(null)).resolves.toBeUndefined();
+
+    expect(await feed.list(ALICE.id, { status: "all" })).toEqual([]);
+  });
+
   it("never throws when sending fails, and logs the workflow key, recipient ids and error", async () => {
     // A directory where the file should be makes every write fail.
     const broken = fileFeed(mkdtempSync(join(tmpdir(), "feed-broken-")));

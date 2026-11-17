@@ -150,17 +150,16 @@ export async function action({ request }: Route.ActionArgs) {
 
     // After the update has committed. notify() never throws, so the status
     // change stands whatever happens to the Notification.
-    const notification =
-      before &&
-      buildCourseStatusChanged(
-        db,
-        parsed.data.courseId,
-        before.status,
-        currentUserId
-      );
-    if (notification) {
-      await getNotificationFeed().notify(notification);
-    }
+    await getNotificationFeed().notify(
+      before
+        ? buildCourseStatusChanged(
+            db,
+            parsed.data.courseId,
+            before.status,
+            currentUserId
+          )
+        : null
+    );
 
     return { success: true };
   }

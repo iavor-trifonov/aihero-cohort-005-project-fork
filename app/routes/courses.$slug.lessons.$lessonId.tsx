@@ -443,11 +443,9 @@ function createComment(
  * committed; notify() never throws, so the comment stands whatever happens.
  */
 async function notifyAboutComment(commentId: number) {
-  const notification =
-    buildCommentReplied(db, commentId) ?? buildQuestionAsked(db, commentId);
-  if (notification) {
-    await getNotificationFeed().notify(notification);
-  }
+  await getNotificationFeed().notify(
+    buildCommentReplied(db, commentId) ?? buildQuestionAsked(db, commentId)
+  );
 }
 
 function updateComment(commentId: number, userId: number, body: string) {

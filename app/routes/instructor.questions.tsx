@@ -226,10 +226,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   // After the insert has committed. notify() never throws, so the reply
   // stands whatever happens to the Notification.
-  const notification = buildCommentReplied(db, reply.id);
-  if (notification) {
-    await getNotificationFeed().notify(notification);
-  }
+  await getNotificationFeed().notify(buildCommentReplied(db, reply.id));
 
   return { ok: true };
 }

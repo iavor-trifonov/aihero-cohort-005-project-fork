@@ -13,8 +13,11 @@ import type { FeedItem, Notification } from "./notification";
 export type FeedStatus = "all" | "unread";
 
 export interface NotificationFeed {
-  /** Sends one Notification. Never throws, and never notifies the actor. */
-  notify(notification: Notification): Promise<void>;
+  /**
+   * Sends one Notification. Never throws, and never notifies the actor. Takes
+   * a builder's result as is: `null` (nothing to send) sends nothing.
+   */
+  notify(notification: Notification | null): Promise<void>;
   /** The newest items first, at most `FEED_LIMIT` of them. */
   list(userId: string, options: { status: FeedStatus }): Promise<FeedItem[]>;
   unreadCount(userId: string): Promise<number>;
@@ -42,6 +45,7 @@ export function createFeed(backend: FeedBackend): NotificationFeed {
 
     // The one place the "never about your own action" rule lives.
     async notify(notification) {
+      if (!notification) return;
       const recipients = notification.recipients.filter(
         (recipient) => recipient.id !== notification.actorId
       );

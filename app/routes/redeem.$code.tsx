@@ -208,10 +208,9 @@ export async function action({ params, request }: Route.ActionArgs) {
 
   // After the claim has been written. notify() never throws, so the Seat
   // stays claimed whatever happens to the Notification.
-  const notification = buildSeatClaimed(db, result.seatId, currentUserId);
-  if (notification) {
-    await getNotificationFeed().notify(notification);
-  }
+  await getNotificationFeed().notify(
+    buildSeatClaimed(db, result.seatId, currentUserId)
+  );
 
   const course = getCourseById(result.enrollment.courseId);
   if (!course) {

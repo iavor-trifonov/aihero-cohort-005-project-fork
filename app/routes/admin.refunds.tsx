@@ -131,9 +131,7 @@ export async function action({ request }: Route.ActionArgs) {
   await sendEmail(result.email);
   // After the decision has committed. notify() never throws, so the decision
   // stands whatever happens to the Notification.
-  if (result.notification) {
-    await getNotificationFeed().notify(result.notification);
-  }
+  await getNotificationFeed().notify(result.notification);
 
   return {
     success: true,

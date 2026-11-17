@@ -76,9 +76,7 @@ export async function action({ params, request }: Route.ActionArgs) {
   await sendEmail(result.email);
   // After the write has committed. notify() never throws, so the Refund
   // Request stands whatever happens to the Notification.
-  if (result.notification) {
-    await getNotificationFeed().notify(result.notification);
-  }
+  await getNotificationFeed().notify(result.notification);
 
   return redirect(result.kind === "team_licence" ? "/team" : "/settings");
 }
