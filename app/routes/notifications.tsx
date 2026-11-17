@@ -83,12 +83,9 @@ export async function action({ request }: Route.ActionArgs) {
     await request.formData()
   );
 
-  // An error status skips revalidation, so the row stays as it was.
-  if (!result.ok) {
-    return data({ error: result.error }, { status: result.status });
-  }
-
-  return { ok: true as const };
+  // Returned, not thrown (see CODING_STANDARDS.md): the page shows the error
+  // in place. An error status skips revalidation, so the row stays as it was.
+  return data(result, { status: result.ok ? 200 : result.status });
 }
 
 export default function Notifications({ loaderData }: Route.ComponentProps) {
@@ -149,11 +146,16 @@ function NotificationsFeed({
   }, [loadedItems, allReadThrough]);
 
   const markAll = useFetcher<MarkResult>({ key: "notifications-mark-all" });
+  /** The one place a mark's result is read: shows or clears its error. */
+  function settled(result: MarkResult): boolean {
+    setError(result.ok ? null : result.error);
+    return result.ok;
+  }
+
   useOnSettled(markAll, (result) => {
-    if ("error" in result) {
+    if (!settled(result)) {
       setAllReadThrough(null);
       setOwn({});
-      setError(result.error);
     }
   });
 
@@ -175,11 +177,7 @@ function NotificationsFeed({
   }
 
   function onMarked(itemId: string, read: boolean, result: MarkResult) {
-    if ("error" in result) {
-      setError(result.error);
-      return;
-    }
-    setError(null);
+    if (!settled(result)) return;
     if (allReadThrough) setOwn((current) => ({ ...current, [itemId]: read }));
   }
 

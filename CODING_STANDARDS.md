@@ -12,6 +12,12 @@ if (!course) throw data("Course not found", { status: 404 });
 The route then has one success path. A returned error shape gives every
 component a second path to forget about.
 
+**Exception: `/notifications`.** Its loader returns `available: false` when
+the feed is down, and its action returns `{ ok: false, error }` when a mark
+fails, because the spec wants the message shown inside the normal layout with
+the row left as it was, not an error page. Keep the unpacking in one place
+(`FeedActionResult` in `feed-actions.server.ts`).
+
 ## Parse untrusted input with a schema
 
 Form data, search parameters and request bodies get a zod schema before the
