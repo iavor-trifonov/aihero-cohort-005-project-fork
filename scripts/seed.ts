@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { rmSync } from "node:fs";
 import { eq, gte, isNotNull, isNull, sql, type SQL } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import type { SQLiteTable } from "drizzle-orm/sqlite-core";
@@ -6,6 +7,7 @@ import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import path from "path";
 import { fileURLToPath } from "url";
 import * as schema from "../app/db/schema";
+import { DEV_FEED_PATH } from "../app/lib/notifications/feed.server";
 import {
   UserRole,
   CourseStatus,
@@ -62,6 +64,9 @@ function makeRandom(seed: number): () => number {
 
 async function seed() {
   console.log("Seeding database...");
+
+  // Local Notifications point at user ids and URLs that a reseed replaces.
+  rmSync(DEV_FEED_PATH, { force: true });
 
   // Drop and recreate tables for a clean seed
   sqlite.exec(`
