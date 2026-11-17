@@ -1,4 +1,9 @@
-import { Receipt, type LucideIcon } from "lucide-react";
+import {
+  MessageCircleQuestion,
+  MessageSquareReply,
+  Receipt,
+  type LucideIcon,
+} from "lucide-react";
 import type { NotificationDataMap, NotificationType } from "./notification";
 
 // ─── How each Notification reads ───
@@ -38,9 +43,25 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
 
   // "refund-request-decided": #22
 
-  // "comment-replied": #23
+  "comment-replied": (data) => ({
+    icon: MessageSquareReply,
+    parts: [
+      bold(data.replierName),
+      plain(" replied to your comment on "),
+      bold(data.lessonTitle),
+    ],
+  }),
 
-  // "question-asked": #23
+  "question-asked": (data) => ({
+    icon: MessageCircleQuestion,
+    parts: [
+      bold(data.studentName),
+      plain(" asked a question on "),
+      bold(data.lessonTitle),
+      plain(" in "),
+      bold(data.courseTitle),
+    ],
+  }),
 
   // "seat-claimed": #24
 
