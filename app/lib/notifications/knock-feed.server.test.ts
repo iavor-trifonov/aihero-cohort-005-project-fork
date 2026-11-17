@@ -123,6 +123,22 @@ describe("knockFeed", () => {
     ]);
   });
 
+  it("leaves out, and logs, an item whose payload isn't a Notification we sent", async () => {
+    const { client } = fakeKnock(() =>
+      feedPage([
+        entry({ id: "msg_3", source: { key: "some-other-workflow" } }),
+        entry({ id: "msg_2", data: { actorId: "3", courseTitle: 42 } }),
+        entry({ id: "msg_1" }),
+      ])
+    );
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const items = await knockFeed(client, CHANNEL).list("42", { status: "all" });
+
+    expect(items.map((item) => item.id)).toEqual(["msg_1"]);
+    expect(error).toHaveBeenCalledTimes(2);
+  });
+
   it("asks Knock for unread items only on the Unread tab", async () => {
     const { client, requests } = fakeKnock(() => feedPage([]));
 

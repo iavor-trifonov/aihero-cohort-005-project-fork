@@ -2,6 +2,7 @@ import { Knock } from "@knocklabs/node";
 import type { FeedListItemsResponse } from "@knocklabs/node/resources/users/feeds";
 import { z } from "zod";
 import { createFeed, FEED_LIMIT, type NotificationFeed } from "./feed.server";
+import { feedItemSchema } from "./feed-item.server";
 import type { FeedItem } from "./notification";
 
 // ─── Knock feed (production) ───
@@ -21,17 +22,21 @@ export function knockClient(apiKey: string): Knock {
 
 // A feed item carries the trigger `data` as it was sent: the Notification's
 // snapshot plus the `actorId` that `deliver` adds. Its workflow key is the
-// Notification type. We wrote both, so the cast trusts our own payload.
-function toFeedItem(entry: FeedListItemsResponse): FeedItem {
+// Notification type. Anything that doesn't parse as one of ours is left out
+// and logged, so one odd message never hides the rest of the feed.
+function toFeedItem(entry: FeedListItemsResponse): FeedItem | null {
   const { actorId, ...data } = entry.data ?? {};
-  return {
+  const parsed = feedItemSchema.safeParse({
     id: entry.id,
     type: entry.source.key,
     actorId: String(actorId),
     data,
     insertedAt: entry.inserted_at,
     read: entry.read_at != null,
-  } as FeedItem;
+  });
+  if (parsed.success) return parsed.data;
+  console.error(`Feed item ${entry.id} is not a Notification`, parsed.error);
+  return null;
 }
 
 const feedMeta = z.object({ meta: z.object({ unread_count: z.number() }) });
@@ -76,7 +81,9 @@ export function knockFeed(
         page_size: FEED_LIMIT,
         status,
       });
-      return page.entries.map(toFeedItem);
+      return page.entries
+        .map(toFeedItem)
+        .filter((item): item is FeedItem => item !== null);
     },
 
     async unreadCount(userId) {

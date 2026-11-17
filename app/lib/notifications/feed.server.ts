@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { z } from "zod";
+import { feedItemSchema } from "./feed-item.server";
 import { knockClient, knockFeed } from "./knock-feed.server";
 import type { FeedItem, Notification } from "./notification";
 
@@ -62,7 +64,9 @@ export function createFeed(backend: FeedBackend): NotificationFeed {
 
 // ─── File feed (local dev and tests) ───
 
-type StoredFeeds = Record<string, FeedItem[]>;
+const storedFeedsSchema = z.record(z.string(), z.array(feedItemSchema));
+
+type StoredFeeds = z.infer<typeof storedFeedsSchema>;
 
 function toFeedItem(notification: Notification): FeedItem {
   const { recipients: _recipients, ...sent } = notification;
@@ -82,7 +86,7 @@ function toFeedItem(notification: Notification): FeedItem {
 export function fileFeed(path: string): NotificationFeed {
   function read(): StoredFeeds {
     if (!existsSync(path)) return {};
-    return JSON.parse(readFileSync(path, "utf8")) as StoredFeeds;
+    return storedFeedsSchema.parse(JSON.parse(readFileSync(path, "utf8")));
   }
 
   function write(feeds: StoredFeeds) {

@@ -8,7 +8,8 @@ import type { PurchaseKind } from "~/lib/refunds.server";
 // anything up in SQLite to show a row, so the text reads as it did then.
 //
 // Adding a type: give it one entry in `NotificationDataMap` below, one entry in
-// the renderer table in `./render.ts`, and its own builder file
+// the renderer table in `./render.ts`, one in the schema in
+// `./feed-item.server.ts`, and its own builder file
 // (`./<type>.server.ts`). Each type has its own slot, separated by blank lines,
 // so tickets adding different types don't touch the same lines.
 
