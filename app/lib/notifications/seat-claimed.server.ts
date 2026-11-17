@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { coupons, courses, purchases, users } from "~/db/schema";
 import type { Notification } from "./notification";
 import { toRecipient, type Db } from "./recipients.server";
@@ -45,7 +45,11 @@ export function buildSeatClaimed(
       left: sql<number>`count(*) filter (where ${coupons.redeemedByUserId} is null)`,
     })
     .from(coupons)
-    .where(eq(coupons.purchaseId, seat.purchaseId))
+    // A refunded Team Licence's Unclaimed Seats can never be claimed, so they
+    // don't count, the same as on /team.
+    .where(
+      and(eq(coupons.purchaseId, seat.purchaseId), isNull(coupons.refundedAt))
+    )
     .get();
 
   return {

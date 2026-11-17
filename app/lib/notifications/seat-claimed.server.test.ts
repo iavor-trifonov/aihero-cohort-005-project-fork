@@ -97,6 +97,19 @@ describe("seat-claimed", () => {
     );
   });
 
+  it("leaves refunded Seats out of the Seats left and the total, as /team does", () => {
+    const seats = buyTeamLicence(4);
+    claim(seats[0], base.user.id);
+    db.update(schema.coupons)
+      .set({ refundedAt: new Date().toISOString() })
+      .where(eq(schema.coupons.id, seats[3].id))
+      .run();
+
+    const notification = buildSeatClaimed(db, seats[0].id, base.user.id);
+
+    expect(notification?.data).toMatchObject({ seatsLeft: 2, seatsTotal: 3 });
+  });
+
   it("notifies nobody when the Team Admin claims a Seat on their own Team Licence", async () => {
     const seats = buyTeamLicence(2);
     claim(seats[0], teamAdmin.id);
