@@ -1,4 +1,6 @@
 import { Receipt, type LucideIcon } from "lucide-react";
+import { BookOpen } from "lucide-react";
+import { CourseStatus } from "~/db/schema";
 import type { NotificationDataMap, NotificationType } from "./notification";
 
 // ─── How each Notification reads ───
@@ -44,7 +46,19 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
 
   // "seat-claimed": #24
 
-  // "course-status-changed": #25
+  "course-status-changed": (data) => ({
+    icon: BookOpen,
+    parts: [
+      bold(data.courseTitle),
+      plain(
+        data.status === CourseStatus.Published
+          ? " was published."
+          : data.status === CourseStatus.Archived
+            ? " was archived."
+            : " was moved back to draft."
+      ),
+    ],
+  }),
 };
 
 function renderAs<T extends NotificationType>(
