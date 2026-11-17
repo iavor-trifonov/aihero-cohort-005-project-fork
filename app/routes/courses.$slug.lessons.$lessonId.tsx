@@ -11,6 +11,9 @@ import {
 } from "~/components/comment-thread";
 import { MIN_COMMENT_LENGTH, MAX_COMMENT_LENGTH } from "~/lib/comments";
 import { db } from "~/db";
+import { getNotificationFeed } from "~/lib/notifications/feed.server";
+import { buildCommentReplied } from "~/lib/notifications/comment-replied.server";
+import { buildQuestionAsked } from "~/lib/notifications/question-asked.server";
 import {
   categories,
   comments,
@@ -432,6 +435,19 @@ function createComment(
     .values({ userId, lessonId, parentId, body: trimmed })
     .returning()
     .get();
+}
+
+/**
+ * Sends the Notification a new comment causes: a question to the Instructor,
+ * or a reply to the top-level comment's author. Called after the insert has
+ * committed; notify() never throws, so the comment stands whatever happens.
+ */
+async function notifyAboutComment(commentId: number) {
+  const notification =
+    buildCommentReplied(db, commentId) ?? buildQuestionAsked(db, commentId);
+  if (notification) {
+    await getNotificationFeed().notify(notification);
+  }
 }
 
 function updateComment(commentId: number, userId: number, body: string) {
@@ -900,12 +916,13 @@ export async function action({ params, request }: Route.ActionArgs) {
         if (!parsed.success) {
           return { ok: false, error: "Enter a comment before posting." };
         }
-        createComment(
+        const created = createComment(
           currentUserId,
           lessonId,
           parsed.data.parentId ?? null,
           parsed.data.body
         );
+        await notifyAboutComment(created.id);
         return { ok: true };
       }
 
