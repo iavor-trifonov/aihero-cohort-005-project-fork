@@ -1,4 +1,5 @@
 import { Receipt, type LucideIcon } from "lucide-react";
+import { BadgeCheck, BadgeX } from "lucide-react";
 import type { NotificationDataMap, NotificationType } from "./notification";
 
 // ─── How each Notification reads ───
@@ -36,7 +37,14 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
     ],
   }),
 
-  // "refund-request-decided": #22
+  "refund-request-decided": (data) => ({
+    icon: data.decision === "approved" ? BadgeCheck : BadgeX,
+    parts: [
+      plain("Your refund request for "),
+      bold(data.courseTitle),
+      plain(` was ${data.decision}.`),
+    ],
+  }),
 
   // "comment-replied": #23
 
