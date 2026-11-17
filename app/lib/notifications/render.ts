@@ -2,6 +2,7 @@ import {
   MessageCircleQuestion,
   MessageSquareReply,
   Receipt,
+  Ticket,
   type LucideIcon,
 } from "lucide-react";
 import type { NotificationDataMap, NotificationType } from "./notification";
@@ -63,7 +64,15 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
     ],
   }),
 
-  // "seat-claimed": #24
+  "seat-claimed": (data) => ({
+    icon: Ticket,
+    parts: [
+      bold(data.studentName),
+      plain(" claimed a Seat on "),
+      bold(data.courseTitle),
+      plain(`. ${data.seatsLeft} of ${data.seatsTotal} Seats left.`),
+    ],
+  }),
 
   // "course-status-changed": #25
 };

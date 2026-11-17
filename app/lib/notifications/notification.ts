@@ -38,7 +38,13 @@ export interface NotificationDataMap {
     url: string;
   };
 
-  // "seat-claimed": #24
+  "seat-claimed": {
+    studentName: string;
+    courseTitle: string;
+    seatsLeft: number;
+    seatsTotal: number;
+    url: string;
+  };
 
   // "course-status-changed": #25
 }
