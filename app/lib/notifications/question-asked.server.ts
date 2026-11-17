@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { comments, courses, lessons, modules, users } from "~/db/schema";
-import type { Notification } from "./notification";
+import { userKey, type Notification } from "./notification";
 import { toRecipient, type Db } from "./recipients.server";
 
 /**
@@ -46,7 +46,7 @@ export function buildQuestionAsked(
     recipients: [
       toRecipient({ id: found.instructorId, name: found.instructorName }),
     ],
-    actorId: String(found.studentId),
+    actorId: userKey(found.studentId),
     data: {
       studentName: found.studentName,
       lessonTitle: found.lessonTitle,

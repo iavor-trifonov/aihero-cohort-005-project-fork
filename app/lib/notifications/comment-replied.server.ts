@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 import { comments, courses, lessons, modules, users } from "~/db/schema";
-import type { Notification } from "./notification";
+import { userKey, type Notification } from "./notification";
 import { toRecipient, type Db } from "./recipients.server";
 
 /**
@@ -46,7 +46,7 @@ export function buildCommentReplied(
     recipients: [
       toRecipient({ id: found.parentAuthorId, name: found.parentAuthorName }),
     ],
-    actorId: String(found.replierId),
+    actorId: userKey(found.replierId),
     data: {
       replierName: found.replierName,
       lessonTitle: found.lessonTitle,

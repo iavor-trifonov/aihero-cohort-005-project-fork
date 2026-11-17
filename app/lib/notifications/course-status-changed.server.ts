@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { courses, users, type CourseStatus } from "~/db/schema";
-import type { Notification } from "./notification";
+import { userKey, type Notification } from "./notification";
 import { toRecipient, type Db } from "./recipients.server";
 
 /**
@@ -12,7 +12,7 @@ export function buildCourseStatusChanged(
   db: Db,
   courseId: number,
   previousStatus: CourseStatus,
-  adminId: number
+  platformAdminId: number
 ): Notification | null {
   const found = db
     .select({
@@ -33,7 +33,7 @@ export function buildCourseStatusChanged(
     recipients: [
       toRecipient({ id: found.instructorId, name: found.instructorName }),
     ],
-    actorId: String(adminId),
+    actorId: userKey(platformAdminId),
     data: {
       courseTitle: found.courseTitle,
       status: found.status,

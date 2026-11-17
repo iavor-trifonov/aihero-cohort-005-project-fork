@@ -1,6 +1,6 @@
 import { and, eq, isNull, sql } from "drizzle-orm";
 import { coupons, courses, purchases, users } from "~/db/schema";
-import type { Notification } from "./notification";
+import { userKey, type Notification } from "./notification";
 import { toRecipient, type Db } from "./recipients.server";
 
 /**
@@ -55,7 +55,7 @@ export function buildSeatClaimed(
   return {
     type: "seat-claimed",
     recipients: [toRecipient(teamAdmin)],
-    actorId: String(studentId),
+    actorId: userKey(studentId),
     data: {
       studentName: student.name,
       courseTitle: seat.courseTitle,

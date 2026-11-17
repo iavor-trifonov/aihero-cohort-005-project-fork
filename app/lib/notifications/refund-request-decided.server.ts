@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { coupons, courses, purchases, refunds, users, RefundStatus } from "~/db/schema";
-import type { Notification } from "./notification";
+import { userKey, type Notification } from "./notification";
 import { toRecipient, type Db } from "./recipients.server";
 
 /**
@@ -44,7 +44,7 @@ export function buildRefundRequestDecided(
   return {
     type: "refund-request-decided",
     recipients: [toRecipient({ id: found.buyerId, name: found.buyerName })],
-    actorId: String(platformAdminId),
+    actorId: userKey(platformAdminId),
     data: {
       courseTitle: found.courseTitle,
       decision:

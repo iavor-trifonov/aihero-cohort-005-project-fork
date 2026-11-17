@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { getCurrentUserId, getDevCountry } from "~/lib/session";
 import { getCountryTierInfo, COUNTRIES } from "~/lib/ppp";
 import { getNotificationFeed } from "~/lib/notifications/feed.server";
+import { userKey } from "~/lib/notifications/notification";
 import { sidebarUnreadCount } from "~/lib/notifications/sidebar-unread.server";
 import { eq, and, or, sql, desc } from "drizzle-orm";
 import { db } from "~/db";
@@ -217,7 +218,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     isTeamAdmin: currentUserId ? isTeamAdmin(currentUserId) : false,
     // Not awaited: the sidebar streams it in, so navigation never waits on it.
     unreadCount: currentUserId
-      ? sidebarUnreadCount(getNotificationFeed(), String(currentUserId))
+      ? sidebarUnreadCount(getNotificationFeed(), userKey(currentUserId))
       : Promise.resolve(null),
   };
 }

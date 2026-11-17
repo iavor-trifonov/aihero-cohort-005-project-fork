@@ -2,7 +2,7 @@ import { asc, eq } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as schema from "~/db/schema";
 import { UserRole, users } from "~/db/schema";
-import type { Recipient } from "./notification";
+import { userKey, type Recipient } from "./notification";
 
 // ─── Recipient lookups ───
 // Shared by the builders. Each runs at trigger time, so whoever holds the role
@@ -11,7 +11,7 @@ import type { Recipient } from "./notification";
 export type Db = BetterSQLite3Database<typeof schema>;
 
 export function toRecipient(user: { id: number; name: string }): Recipient {
-  return { id: String(user.id), name: user.name };
+  return { id: userKey(user.id), name: user.name };
 }
 
 /** Every Platform Admin. */
