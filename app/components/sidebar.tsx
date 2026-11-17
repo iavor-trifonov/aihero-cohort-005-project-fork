@@ -1,9 +1,11 @@
-import { NavLink, Form } from "react-router";
-import { useState, useEffect } from "react";
+import { NavLink, Form, Await } from "react-router";
+import { useState, useEffect, Suspense } from "react";
+import { unreadBadgeLabel } from "~/lib/notifications/badge";
 import { cn } from "~/lib/utils";
 import { UserRole } from "~/db/schema";
 import { UserAvatar } from "~/components/user-avatar";
 import {
+  Bell,
   BookOpen,
   ChartColumn,
   LayoutDashboard,
@@ -41,6 +43,8 @@ interface SidebarProps {
   currentUser: CurrentUser | null;
   recentCourses?: RecentCourse[];
   isTeamAdmin?: boolean;
+  /** Streamed from the layout loader; null when the count is unavailable. */
+  unreadCount?: Promise<number | null>;
 }
 
 interface NavItem {
@@ -51,6 +55,12 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  {
+    label: "Notifications",
+    to: "/notifications",
+    icon: <Bell className="size-4" />,
+    roles: [UserRole.Student, UserRole.Instructor, UserRole.Admin],
+  },
   {
     label: "Browse Courses",
     to: "/courses",
@@ -107,6 +117,19 @@ const navItems: NavItem[] = [
   },
 ];
 
+function UnreadBadge({ count }: { count: number | null }) {
+  const label = count === null ? null : unreadBadgeLabel(count);
+  if (!label) return null;
+  return (
+    <span
+      aria-label={`${count} unread`}
+      className="ml-auto rounded-full bg-red-600 px-1.5 py-0.5 text-xs font-semibold leading-none text-white"
+    >
+      {label}
+    </span>
+  );
+}
+
 function isVisible(item: NavItem, role: UserRole | null): boolean {
   if (item.roles === "all") return true;
   if (!role) return false;
@@ -117,6 +140,7 @@ export function Sidebar({
   currentUser,
   recentCourses = [],
   isTeamAdmin = false,
+  unreadCount,
 }: SidebarProps) {
   const currentUserRole = currentUser?.role ?? null;
   const [isDark, setIsDark] = useState(false);
@@ -160,6 +184,13 @@ export function Sidebar({
             >
               {item.icon}
               {item.label}
+              {item.to === "/notifications" && unreadCount && (
+                <Suspense fallback={null}>
+                  <Await resolve={unreadCount} errorElement={null}>
+                    {(count) => <UnreadBadge count={count} />}
+                  </Await>
+                </Suspense>
+              )}
             </NavLink>
           ))}
         {isTeamAdmin && (

@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { knockClient, knockFeed } from "./knock-feed.server";
 import type { FeedItem, Notification } from "./notification";
 
 // ─── Notification feed ───
@@ -145,8 +146,19 @@ export function fileFeed(path: string): NotificationFeed {
 /** Where local dev keeps its feeds. Gitignored; `npm run db:seed` deletes it. */
 export const DEV_FEED_PATH = ".notifications.json";
 
-/** The feed for this environment. */
-export function getNotificationFeed(): NotificationFeed {
-  // #26: use the Knock-backed feed when KNOCK_API_KEY is set.
-  return fileFeed(DEV_FEED_PATH);
+type FeedEnv = {
+  KNOCK_API_KEY?: string;
+  KNOCK_FEED_CHANNEL_ID?: string;
+};
+
+/**
+ * The feed for this environment: Knock whenever `KNOCK_API_KEY` is set, the
+ * file feed otherwise. Vitest doesn't load `.env`, so tests never reach Knock.
+ */
+export function getNotificationFeed(
+  env: FeedEnv = process.env
+): NotificationFeed {
+  const apiKey = env.KNOCK_API_KEY;
+  if (!apiKey) return fileFeed(DEV_FEED_PATH);
+  return knockFeed(knockClient(apiKey), env.KNOCK_FEED_CHANNEL_ID);
 }
