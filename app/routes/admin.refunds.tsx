@@ -22,6 +22,7 @@ import {
 } from "~/lib/refunds.server";
 import { RULE_BREAK_LABELS } from "~/lib/refund-rules";
 import { sendEmail } from "~/lib/mailer.server";
+import { getNotificationFeed } from "~/lib/notifications/feed.server";
 
 const refundFilterSchema = z
   .nativeEnum(RefundStatus)
@@ -128,6 +129,11 @@ export async function action({ request }: Route.ActionArgs) {
   }
 
   await sendEmail(result.email);
+  // After the decision has committed. notify() never throws, so the decision
+  // stands whatever happens to the Notification.
+  if (result.notification) {
+    await getNotificationFeed().notify(result.notification);
+  }
 
   return {
     success: true,

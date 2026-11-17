@@ -25,6 +25,7 @@ import {
 } from "~/lib/refund-rules";
 import type { Notification } from "~/lib/notifications/notification";
 import { buildRefundRequestRaised } from "~/lib/notifications/refund-request-raised.server";
+import { buildRefundRequestDecided } from "~/lib/notifications/refund-request-decided.server";
 
 // ─── Refunds ───
 // Everything about Refund Requests: whether a Purchase may be refunded, raising
@@ -578,7 +579,30 @@ export function listTeamLicences(db: Queryable, buyerId: number, now: Date) {
 
 // ─── Deciding a Refund Request ───
 
-export type DecisionResult = { ok: true; email: Email } | Failure;
+export type DecisionResult =
+  | {
+      ok: true;
+      email: Email;
+      /** For the buyer. Send it once this has returned. */
+      notification: Notification | null;
+    }
+  | Failure;
+
+type DecisionWritten = { ok: true; email: Email } | Failure;
+
+/** Adds the buyer's Notification once the decision has been committed. */
+function withNotification(
+  db: Db,
+  written: DecisionWritten,
+  refundRequestId: number,
+  platformAdminId: number
+): DecisionResult {
+  if (!written.ok) return written;
+  return {
+    ...written,
+    notification: buildRefundRequestDecided(db, refundRequestId, platformAdminId),
+  };
+}
 
 function findOpenRefundRequest(
   tx: Queryable,
@@ -628,7 +652,7 @@ export function approveRefundRequest(
   note: string | null,
   now: Date
 ): DecisionResult {
-  return db.transaction((tx): DecisionResult => {
+  const written = db.transaction((tx): DecisionWritten => {
     const found = findOpenRefundRequest(tx, refundRequestId);
     if (!found.ok) return found;
 
@@ -692,6 +716,8 @@ export function approveRefundRequest(
       email: buildDecisionEmail(tx, purchase, RefundStatus.Approved, note),
     };
   });
+
+  return withNotification(db, written, refundRequestId, platformAdminId);
 }
 
 /**
@@ -716,7 +742,7 @@ export function declineRefundRequest(
     };
   }
 
-  return db.transaction((tx): DecisionResult => {
+  const written = db.transaction((tx): DecisionWritten => {
     const found = findOpenRefundRequest(tx, refundRequestId);
     if (!found.ok) return found;
 
@@ -740,6 +766,8 @@ export function declineRefundRequest(
       ),
     };
   });
+
+  return withNotification(db, written, refundRequestId, platformAdminId);
 }
 
 /** The email the buyer gets once their Refund Request is decided. */

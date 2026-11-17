@@ -24,7 +24,12 @@ export interface NotificationDataMap {
     url: string;
   };
 
-  // "refund-request-decided": #22
+  "refund-request-decided": {
+    courseTitle: string;
+    decision: "approved" | "declined";
+    purchaseKind: PurchaseKind;
+    url: string;
+  };
 
   "comment-replied": {
     replierName: string;

@@ -1,4 +1,6 @@
 import {
+  BadgeCheck,
+  BadgeX,
   BookOpen,
   MessageCircleQuestion,
   MessageSquareReply,
@@ -44,7 +46,14 @@ const RENDERERS: { [T in NotificationType]: Renderer<T> } = {
     ],
   }),
 
-  // "refund-request-decided": #22
+  "refund-request-decided": (data) => ({
+    icon: data.decision === "approved" ? BadgeCheck : BadgeX,
+    parts: [
+      plain("Your refund request for "),
+      bold(data.courseTitle),
+      plain(` was ${data.decision}.`),
+    ],
+  }),
 
   "comment-replied": (data) => ({
     icon: MessageSquareReply,
