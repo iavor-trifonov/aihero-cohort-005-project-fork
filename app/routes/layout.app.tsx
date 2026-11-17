@@ -2,6 +2,7 @@ import { Outlet } from "react-router";
 import type { Route } from "./+types/layout.app";
 import { Sidebar } from "~/components/sidebar";
 import { DevUI } from "~/components/dev-ui";
+import { NotificationsPrototypeBar } from "~/components/notifications.prototype"; // PROTOTYPE
 import { Toaster } from "sonner";
 import { getCurrentUserId, getDevCountry } from "~/lib/session";
 import { getCountryTierInfo, COUNTRIES } from "~/lib/ppp";
@@ -244,6 +245,7 @@ export default function AppLayout({ loaderData }: Route.ComponentProps) {
         countryTierInfo={countryTierInfo}
         countries={countries}
       />
+      <NotificationsPrototypeBar user={currentUser} isTeamAdmin={userIsTeamAdmin} />
       <Toaster position="bottom-right" richColors closeButton />
     </div>
   );
