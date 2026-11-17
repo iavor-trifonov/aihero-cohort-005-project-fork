@@ -160,5 +160,12 @@ export function getNotificationFeed(
 ): NotificationFeed {
   const apiKey = env.KNOCK_API_KEY;
   if (!apiKey) return fileFeed(DEV_FEED_PATH);
+  if (!env.KNOCK_FEED_CHANNEL_ID) {
+    // Still sends Notifications, but every feed read or mark will fail (the
+    // page shows "unavailable", the badge disappears), so say why.
+    console.error(
+      "KNOCK_API_KEY is set but KNOCK_FEED_CHANNEL_ID is not: Notifications are sent, but nobody can read or mark their feed. See docs/operations/knock.md."
+    );
+  }
   return knockFeed(knockClient(apiKey), env.KNOCK_FEED_CHANNEL_ID);
 }

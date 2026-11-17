@@ -282,6 +282,16 @@ describe("getNotificationFeed", () => {
     );
   });
 
+  it("says loudly that KNOCK_FEED_CHANNEL_ID is missing when KNOCK_API_KEY is set", () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    getNotificationFeed({ KNOCK_API_KEY: "sk_test_fake" });
+
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("KNOCK_FEED_CHANNEL_ID")
+    );
+  });
+
   it("uses the file feed when KNOCK_API_KEY is not set", async () => {
     const fetch = stubFetch();
     const feed = getNotificationFeed({ KNOCK_FEED_CHANNEL_ID: CHANNEL });
