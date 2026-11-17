@@ -1,5 +1,6 @@
-import { eq, sql } from "drizzle-orm";
-import { coupons, courses, purchases, refunds, users, RefundStatus } from "~/db/schema";
+import { eq } from "drizzle-orm";
+import { courses, purchases, refunds, users, RefundStatus } from "~/db/schema";
+import { getPurchaseKind } from "~/lib/refunds.server";
 import { userKey, type Notification } from "./notification";
 import { toRecipient, type Db } from "./recipients.server";
 
@@ -32,14 +33,7 @@ export function buildRefundRequestDecided(
 
   if (!found || found.status === RefundStatus.Open) return null;
 
-  // A Team Licence is the Purchase that granted Seats (see refunds.server.ts).
-  const seatCount =
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(coupons)
-      .where(eq(coupons.purchaseId, found.purchaseId))
-      .get()?.count ?? 0;
-  const isTeamLicence = seatCount > 0;
+  const purchaseKind = getPurchaseKind(db, found.purchaseId);
 
   return {
     type: "refund-request-decided",
@@ -49,8 +43,11 @@ export function buildRefundRequestDecided(
       courseTitle: found.courseTitle,
       decision:
         found.status === RefundStatus.Approved ? "approved" : "declined",
-      purchaseKind: isTeamLicence ? "team_licence" : "individual_purchase",
-      url: isTeamLicence ? "/team" : `/courses/${found.courseSlug}`,
+      purchaseKind,
+      url:
+        purchaseKind === "team_licence"
+          ? "/team"
+          : `/courses/${found.courseSlug}`,
     },
   };
 }

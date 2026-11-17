@@ -1,5 +1,6 @@
-import { eq, sql } from "drizzle-orm";
-import { coupons, courses, purchases, users } from "~/db/schema";
+import { eq } from "drizzle-orm";
+import { courses, purchases, users } from "~/db/schema";
+import { getPurchaseKind } from "~/lib/refunds.server";
 import { userKey, type Notification } from "./notification";
 import { getPlatformAdmins, type Db } from "./recipients.server";
 
@@ -22,14 +23,6 @@ export function buildRefundRequestRaised(
 
   if (!found) return null;
 
-  // A Team Licence is the Purchase that granted Seats (see refunds.server.ts).
-  const seatCount =
-    db
-      .select({ count: sql<number>`count(*)` })
-      .from(coupons)
-      .where(eq(coupons.purchaseId, purchaseId))
-      .get()?.count ?? 0;
-
   return {
     type: "refund-request-raised",
     recipients: getPlatformAdmins(db),
@@ -37,7 +30,7 @@ export function buildRefundRequestRaised(
     data: {
       buyerName: found.buyerName,
       courseTitle: found.courseTitle,
-      purchaseKind: seatCount > 0 ? "team_licence" : "individual_purchase",
+      purchaseKind: getPurchaseKind(db, purchaseId),
       url: "/admin/refunds",
     },
   };
