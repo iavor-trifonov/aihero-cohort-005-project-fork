@@ -2003,6 +2003,38 @@ This course is still in draft while the cluster examples are rewritten against t
     `Created ${countRows(schema.comments)} lesson comments across ${countRows(schema.comments, isNull(schema.comments.parentId))} threads.`
   );
 
+  // ─── Bookmarks and Notes ───
+  // One Student with a few of each, so the Saved page and the Lesson page's
+  // controls have something to show. Private to that Student.
+
+  db.insert(schema.bookmarks)
+    .values([
+      { userId: students[0].id, lessonId: course1LessonIds[2], createdAt: daysAgo(30) },
+      { userId: students[0].id, lessonId: course1LessonIds[7], createdAt: daysAgo(12) },
+    ])
+    .run();
+  db.insert(schema.notes)
+    .values([
+      {
+        userId: students[0].id,
+        lessonId: course1LessonIds[2],
+        body: "Use `npx tsc`, not a global install.\nKeeps the version pinned to the project.",
+        createdAt: daysAgo(29),
+        updatedAt: daysAgo(29),
+      },
+      {
+        userId: students[0].id,
+        lessonId: course1LessonIds[5],
+        body: "Come back to the # and * examples. Rewatch the second half.",
+        createdAt: daysAgo(20),
+        updatedAt: daysAgo(4),
+      },
+    ])
+    .run();
+  console.log(
+    `Created ${countRows(schema.bookmarks)} bookmarks and ${countRows(schema.notes)} notes.`
+  );
+
   // ─── Lesson Progress ───
 
   // Helper to mark lessons as complete
